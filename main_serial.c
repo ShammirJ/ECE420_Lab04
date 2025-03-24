@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <string.h>
 #include "Lab4_IO.h"
 #include "timer.h"
 
@@ -18,7 +19,7 @@ int main (int argc, char* argv[]){
     struct node *nodehead;
     int nodecount;
     double *r, *r_pre;
-    int i, j;
+    int i, j, k;
     int iterationcount;
     double start, end;
     FILE *ip;
@@ -43,12 +44,26 @@ int main (int argc, char* argv[]){
         r[i] = 1.0 / nodecount;
     /* INITIALIZE MORE VARIABLES IF NECESSARY */
 
+    GET_TIME(start);
+
     // core calculation
     do{
         ++iterationcount;
         /* IMPLEMENT ITERATIVE UPDATE */
 
+        memcpy(r_pre, r, nodecount * sizeof(double)); // r[t-1] = r[t]
+        
+        for (i = 0; i < nodecount; i++) {
+            k = nodehead[i].num_out_links;
+            for (j = 0; j < k; j++)
+                r[i] += r_pre[nodehead[i].inlinks[j]];
+            r[i] /= k;
+            r[i] += (1 - DAMPING_FACTOR) / nodecount;
+        }
+
     }while(rel_error(r, r_pre, nodecount) >= EPSILON);
+
+    GET_TIME(end);
 
     Lab4_saveoutput(r, nodecount, end - start);
 
