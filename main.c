@@ -205,6 +205,7 @@ int main (int argc, char* argv[]){
             len_diff_local_sq += ((r_local[i] - rPre[start_index + i]) * (r_local[i] - rPre[start_index + i])) / len_rPre_sq;
         }
 
+        // Need to update to using MPI_Gatherv()
         MPI_Gather((void*) r_local, partition, MPI_DOUBLE, (void*) r, partition, MPI_DOUBLE, 0, comm);
         MPI_Reduce((void*) &len_diff_local_sq, (void*) &diff_sq, 1, MPI_DOUBLE, MPI_SUM, 0, comm);
     }
