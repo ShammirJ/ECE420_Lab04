@@ -1,6 +1,15 @@
 # FRIENDLY REMIDER: NEVER DO rm *.txt
 
-all: datatrim serial
+EXES = datatrim serial main
+TXT = data_input_meta data_input_link data_output
+
+all: $(EXES)
+
+main: main.o Lab4_IO.o
+	mpicc -Wall -g -lm -o main main.o Lab4_IO.o -lm
+
+main.o: main.c
+	mpicc -Wall -g -lm -c main.c -o main.o -lm
 
 serial: serial.o Lab4_IO.o
 	gcc -Wall -g -lm -o serial serial.o Lab4_IO.o -lm
@@ -17,7 +26,7 @@ datatrim: datatrim.c
 cleanall: clean cleantxt
 
 clean:
-	rm -f *.o datatrim serial
+	rm -f *.o $(EXES)
 
 cleantxt:
-	rm -f data_input_meta data_input_link data_output
+	rm -f *.log $(TXT)
