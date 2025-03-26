@@ -37,7 +37,7 @@ cleantxt:
 	rm -f *.log $(TXT)
 
 zip:
-	zip user30_lab4.zip \
+	zip user30_lab04.zip \
 	datatrim.c \
 	emergency.sh \
 	Lab4_IO.c \
