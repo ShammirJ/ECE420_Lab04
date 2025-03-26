@@ -28,10 +28,16 @@ Lab4_IO.o: Lab4_IO.c Lab4_IO.h
 datatrim: datatrim.c
 	gcc datatrim.c -o datatrim
 
-cleanall: clean cleantxt
+cleanall: clean cleantxt cleanzip
 
 clean:
 	rm -f *.o $(EXES)
 
 cleantxt:
 	rm -f *.log $(TXT)
+
+zip:
+	zip ECE420_Lab04 *
+
+cleanzip:
+	rm *.zip
