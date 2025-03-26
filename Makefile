@@ -38,7 +38,7 @@ cleantxt:
 
 zip:
 	zip user30_lab4.zip \
-	datatm.nc \
+	datatrim.c \
 	emergency.sh \
 	Lab4_IO.c \
 	Lab4_IO.h \
