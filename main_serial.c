@@ -14,7 +14,7 @@
 #define EPSILON 0.00001
 #define DAMPING_FACTOR 0.85
 
-#define DEBUG 0 // Set to 1 to enable debug mode. Turns this on if all you want to test is time to avoid taking time printing to data_output
+#define DEBUG 1 // Set to 1 to enable debug mode. Turns this on if all you want to test is time to avoid taking time printing to data_output
 
 /* Append the run time to an output file, used for time debug mode */
 void Append_Time(double time) {

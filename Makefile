@@ -1,9 +1,14 @@
 # FRIENDLY REMIDER: NEVER DO rm *.txt
 
-EXES = datatrim serial main
+EXES = datatrim serial main randomTester
 TXT = data_input_meta data_input_link data_output
 
+reset: cleanall all
+
 all: $(EXES)
+
+randomTester: randomTester.c
+	gcc randomTester.c -o randomTester
 
 main: main.o Lab4_IO.o
 	mpicc -Wall -g -lm -o main main.o Lab4_IO.o -lm

@@ -16,7 +16,8 @@
 #define EPSILON 0.00001
 #define D 0.85
 
-#define DEBUG 0 // Set to 1 to enable debug mode. Turns this on if all you want to test is time to avoid taking time printing to data_output
+// Set to 1 to enable debug mode. Turns this on if all you want to test is time to avoid taking time printing to data_output
+#define DEBUG 1
 
 typedef struct node Node;
 
@@ -72,7 +73,7 @@ int __Init__(Node **node, double **r, double **rPre) {
     return numNodes;
 }
 
-/* Clean up all dynamic memories */
+/* Clean up *most* dynamic memories */
 void __Clean__(Node *node, double *r, double *rPre, int numNodes) {
     node_destroy(node, numNodes);
     free(rPre);
@@ -110,6 +111,11 @@ int main (int argc, char* argv[]){
     int num_in_link; // Number of outgoing edges that lead to a node
     int l_j;
 
+    /* Array to store the send sizes and displacement relative to *recvbuff of each process.
+     * Only the master process needs these
+     */ 
+    int *recvcounts, *displs;
+
     /* Probabnility that the random clicker stop traversing
      * Equal: (1-D) * 1/N
      */
@@ -145,28 +151,71 @@ int main (int argc, char* argv[]){
             }
         }
 
-    if (myRank == 0)
+    if (myRank == 0) 
         printf("\'%s\': numNodes = %d, init_prob = %f, npros = %d\n", argv[0], numNodes, *r, npros);
     
     if (myRank == 0) // Only the master process should measure time
         GET_TIME(start);
     
     STOP_P = (1 - D) / numNodes;
+    par = numNodes / npros;
+    mod = numNodes % npros;
     
     if (numNodes <= npros) {
         partition = 1;
         start_index = myRank;
+
+        if (myRank == 0) {
+            /* Only the master process needs the recvcount and displs array */
+                    
+            if ((recvcounts = malloc(numNodes * sizeof(int))) == NULL) {
+                fprintf(stderr, "ERROR pros %d: Cannot allocate memories for recvcouonts\n", myRank);
+                MPI_Abort(comm, -1);
+            }
+
+            if ((displs = malloc(numNodes * sizeof(int))) == NULL) {
+                fprintf(stderr, "ERROR pros %d: Cannot allocate memories for displs\n", myRank);
+                MPI_Abort(comm, -1);
+            }
+
+            for (i = 0; i < numNodes; i++) {
+                recvcounts[i] = 1;
+                displs[i]     = i;
+            }
+        }
+
+        if (myRank >= numNodes) // Kill all excess processes
+            return 0;
     }
     else {
-        /* If numNodes is not divisible by npros, then up to numNodes % npros needs to take an extra partiton for a balance workloads */
+        /* If numNodes is not divisible by npros, then up to numNodes % npros needs to take an extra partiton for a balance workload */
 
-        par = numNodes / npros;
-        mod = numNodes % npros;
         partition = (myRank < mod) ? par + 1 : par;
         start_index = (myRank < mod) ? myRank * partition : mod * (partition + 1) + (myRank - mod) * partition;
 
         // Debug
-        printf("Process %d: partition = %d, start_index = %d\n", myRank, partition, start_index);
+        //printf("Process %d: partition = %d, start_index = %d\n", myRank, partition, start_index);
+
+        if (myRank == 0) {
+            /* Only the master process needs the recvcount and displs array */
+        
+            if ((recvcounts = malloc(npros * sizeof(int))) == NULL) {
+                fprintf(stderr, "ERROR pros %d: Cannot allocate memories for recvcouonts\n", myRank);
+                MPI_Abort(comm, -1);
+            }
+
+            if ((displs = malloc(npros * sizeof(int))) == NULL) {
+                fprintf(stderr, "ERROR pros %d: Cannot allocate memories for displs\n", myRank);
+                MPI_Abort(comm, -1);
+            }
+
+            for (i = 0; i < npros; i++)
+                recvcounts[i] = (i < mod) ?  par + 1: par;
+
+            displs[0] = 0;
+            for (i = 0; i < npros; i++)
+                displs[i] = displs[i - 1] + recvcounts[i - 1];
+        }
     }
 
     node_start = nodes + start_index;
@@ -177,11 +226,11 @@ int main (int argc, char* argv[]){
         MPI_Abort(comm, -1);
     }
 
+    diff_sq = 100; // Assigned some abitrary number to keep non-master processes running forever
     do {
         if (myRank == 0) 
             memcpy(rPre, r, numNodes * sizeof(double));
-        else
-            diff_sq = 100; // Assigned some abitrary number for the non-master process
+ 
         MPI_Bcast((void*) rPre, numNodes, MPI_DOUBLE, 0, comm); // Broadcasr r(t-1) to every process
 
         /* Calculate ||rPre||^2 */
@@ -205,8 +254,7 @@ int main (int argc, char* argv[]){
             len_diff_local_sq += ((r_local[i] - rPre[start_index + i]) * (r_local[i] - rPre[start_index + i])) / len_rPre_sq;
         }
 
-        // Need to update to using MPI_Gatherv()
-        MPI_Gather((void*) r_local, partition, MPI_DOUBLE, (void*) r, partition, MPI_DOUBLE, 0, comm);
+        MPI_Gatherv((void*) r_local, partition, MPI_DOUBLE, (void*) r, recvcounts, displs, MPI_DOUBLE, 0, comm);
         MPI_Reduce((void*) &len_diff_local_sq, (void*) &diff_sq, 1, MPI_DOUBLE, MPI_SUM, 0, comm);
     }
     while (diff_sq >= EPSILON * EPSILON);
@@ -223,6 +271,8 @@ int main (int argc, char* argv[]){
     MPI_Finalize();
 
     free(r_local);
+    free(recvcounts);
+    free(displs);
     __Clean__(nodes, r, rPre, numNodes);
 
     return 0;

@@ -22,9 +22,6 @@ if [ "$program" != "serial" ] && [ "$program" != "main" ]; then
     exit 1
 fi
 
-# Clean previous in/out files
-make cleanall
-
 # Compile the programs
 make
 
