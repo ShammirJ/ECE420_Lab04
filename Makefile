@@ -37,26 +37,7 @@ cleantxt:
 	rm -f *.log $(TXT)
 
 zip:
-	zip ECE420_Lab04 *
+	zip user30_lab04 *
 
 cleanzip:
 	rm *.zip
-
-zip:
-	zip user30_lab04.zip \
-	datatrim.c \
-	emergency.sh \
-	Lab4_IO.c \
-	Lab4_IO.h \
-	main_serial.c \
-	main.c \
-	Makefile \
-	randomTester.c \
-	ReadMe \
-	serialtester \
-	test.sh \
-	time.sh \
-	timer.h \
-	web-Stanford.txt
-
-.PHONY: zip
