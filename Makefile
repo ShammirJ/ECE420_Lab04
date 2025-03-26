@@ -28,7 +28,7 @@ Lab4_IO.o: Lab4_IO.c Lab4_IO.h
 datatrim: datatrim.c
 	gcc datatrim.c -o datatrim
 
-cleanall: clean cleantxt cleanzip
+cleanall: clean cleantxt
 
 clean:
 	rm -f *.o $(EXES)

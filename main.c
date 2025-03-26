@@ -265,14 +265,14 @@ int main (int argc, char* argv[]){
             Lab4_saveoutput(r, numNodes, end - start);
         if (DEBUG)
             Append_Time(end - start);
+        free(recvcounts);
+        free(displs);
         MPI_Abort(comm, 0); // Kill all other process
     }
 
     MPI_Finalize();
 
     free(r_local);
-    free(recvcounts);
-    free(displs);
     __Clean__(nodes, r, rPre, numNodes);
 
     return 0;
